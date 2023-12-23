@@ -41,6 +41,10 @@ if dein#load_state(s:dein_dir)
     call dein#add('vim-airline/vim-airline')
     call dein#add('vim-airline/vim-airline-themes')
 
+    call dein#add('voldikss/vim-floaterm')
+    call dein#add('rcarriga/nvim-notify')
+    call dein#add('Saverio976/music.nvim')
+
     call dein#end()
     call dein#save_state()
 endif
@@ -114,14 +118,14 @@ let g:airline_powerline_fonts = 1            " Powerline Fontsを利用 "実際n
 nmap <C-p> <Plug>AirlineSelectPrevTab
 nmap <C-n> <Plug>AirlineSelectNextTab
 let g:airline_mode_map = {
-	\ 'n'  : 'Normal',
-	\ 'i'  : 'Insert',
-	\ 'R'  : 'Replace',
-	\ 'c'  : 'Command',
-	\ 'v'  : 'Visual',
-	\ 'V'  : 'V-Line',
-	\ '⌃V' : 'V-Block',
-	\ }
+    \ 'n'  : 'Normal',
+    \ 'i'  : 'Insert',
+    \ 'R'  : 'Replace',
+    \ 'c'  : 'Command',
+    \ 'v'  : 'Visual',
+    \ 'V'  : 'V-Line',
+    \ '⌃V' : 'V-Block',
+    \ }
 
 
 " denite settings {
@@ -148,13 +152,12 @@ function! s:denite_my_settings() abort
 endfunction
 
 function! s:denite_filter_my_settings() abort
-    " imap <silent><buffer> <C-o> <Plug>(denite_filter_quit)
     augroup ftplugin-my-denite
         autocmd! * <buffer>
         autocmd InsertEnter <buffer> imap <silent><buffer> <CR> <ESC><CR><CR>
         autocmd InsertEnter <buffer> inoremap <silent><buffer> <Esc> <Esc><C-w><C-q>:<C-u>call denite#move_to_parent()<CR>
     augroup END
-    
+
     call deoplete#custom#buffer_option('auto_complete', v:false)
 
     inoremap <silent><buffer> <Down> <Esc>
@@ -165,14 +168,40 @@ function! s:denite_filter_my_settings() abort
        \:call denite#move_to_parent()<CR>
        \:call cursor(line('.')-1,0)<CR>
        \:call denite#move_to_filter()<CR>A
+
+    imap <silent><buffer> <Esc> <Esc>:call denite#move_to_parent()<CR>
 endfunction
 
-call denite#custom#var('file/rec', 'command', ['pt', '--follow', '--nocolor', '--nogroup', '--hidden', '-g', ''])
-call denite#custom#var('grep', 'command', ['pt', '--nogroup', '--nocolor', '--smart-case', '--hidden'])
-call denite#custom#var('grep', 'default_opts', [])
-call denite#custom#var('grep', 'recursive_opts', [])
+let s:denite_default_options = {}
+" highlight filtering word
+call extend(s:denite_default_options, {'highlight_matched_char': 'None', 'highlight_matched_range': 'Search', 'match_highlight': v:true, })
+" split denite window to the top
+call extend(s:denite_default_options, {'direction': 'top', 'filter_split_direction': 'top', })
+" set the filter's prompt
+call extend(s:denite_default_options, {'prompt': '>', })
+call extend(s:denite_default_options, {'smartcase': v:true, })
+" start with filter window by default
+call extend(s:denite_default_options, {'start_filter': v:true, })
+call denite#custom#option('default', s:denite_default_options)
 
-call denite#custom#source('max_candidates', '5000')
+" call denite#custom#var('file/rec', 'command', ['pt', '--follow', '--nocolor', '--nogroup', '--hidden', '-g', ''])
+" call denite#custom#var('grep', 'command', ['pt', '--nogroup', '--nocolor', '--smart-case', '--hidden'])
+if executable("rg")
+    call denite#custom#var('file/rec', 'command',
+   \ ['rg', '--files', '--glob', '!.git', '--color', 'never', '--hidden'])
+    call denite#custom#var('grep', {
+   \ 'command': ['rg'],
+   \ 'default_opts': ['-i', '--vimgrep', '--no-heading'],
+   \ 'recursive_opts': [],
+   \ 'pattern_opt': ['--regexp'],
+   \ 'separator': ['--'],
+   \ 'final_opts': [],
+   \ })
+endif
+
+call denite#custom#source('file/rec', 'max_candidates, 100')
+call denite#custom#source('grep', 'max_candidates', 300)
+
 " Change ignore_globs
 call denite#custom#filter('matcher/ignore_globs', 'ignore_globs',
       \ [ '.git/', '.ropeproject/', '__pycache__/',
@@ -203,6 +232,12 @@ autocmd BufEnter * if tabpagenr('$') == 1 && winnr('$') == 1 && exists('b:NERDTr
 
 " Deoplete setting
 let g:deoplete#enable_at_startup = 1
+" Close the preview window after completion is done
+autocmd CompleteDone * silent! pclose!
+" Tab completion
+inoremap <expr><TAB> pumvisible()? "\<C-n>": "\<TAB>"
+
+
 
 " LSP configuration
 lua << EOF
