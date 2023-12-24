@@ -1,6 +1,8 @@
 local notify = require("notify")
 local json = require("dkjson")
 
+math.randomseed(os.time())
+
 -- Function to read quotes from a JSON file
 local function read_quotes_from_json(file_path)
     local quotes = {}
@@ -17,7 +19,7 @@ local function read_quotes_from_json(file_path)
     return quotes
 end
 
-local quotes_file_path = "/home/shinku/.config/nvim/lua/quotes.json"
+local quotes_file_path = os.getenv("HOME") .. "/.config/nvim/lua/quotes.json"
 local quotes = read_quotes_from_json(quotes_file_path)
 
 -- Function to send a random quote
@@ -29,13 +31,13 @@ local function send_random_quote()
     local quote = quotes[math.random(#quotes)]
     notify(quote.content, "info", {
         title = quote.title,
-        timeout = 5000,
+        timeout = 1 * 60 * 1000,  -- last for 1 minutes
     })
 end
 
 -- Function to schedule sending quotes
 local function schedule_quote()
-    local interval = math.random(5, 20)  -- Random time between 5 and 10 minutes
+    local interval = math.random(5, 20)  -- Random time between 5 and 20 minutes
     vim.defer_fn(function()
         send_random_quote()
         schedule_quote()  -- Schedule the next quote

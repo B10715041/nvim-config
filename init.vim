@@ -41,9 +41,7 @@ if dein#load_state(s:dein_dir)
     call dein#add('vim-airline/vim-airline')
     call dein#add('vim-airline/vim-airline-themes')
 
-    call dein#add('voldikss/vim-floaterm')
     call dein#add('rcarriga/nvim-notify')
-    call dein#add('Saverio976/music.nvim')
 
     call dein#end()
     call dein#save_state()
@@ -78,11 +76,12 @@ set tabstop=4
 set showmatch
 set wildmode=list:longest
 set clipboard+=unnamedplus
+set fileencodings=ucs-bom,utf-8,default,iso-2022-jp,euc-jp,sjis
 
 " Remove comment continuation set by $VIMRUNTIME/ftplugin/vim.vim
 autocmd FileType * setlocal formatoptions-=cro
 
-
+nnoremap <ESC> :noh<CR>
 nnoremap <End> <End><Right>
 nnoremap <Home> ^
 nnoremap <PageUp> <C-u>
@@ -151,25 +150,24 @@ function! s:denite_my_settings() abort
     \ denite#do_map('toggle_select').'j'
 endfunction
 
+
 function! s:denite_filter_my_settings() abort
     augroup ftplugin-my-denite
         autocmd! * <buffer>
-        autocmd InsertEnter <buffer> imap <silent><buffer> <CR> <ESC><CR><CR>
+        autocmd InsertEnter <buffer> imap <silent><buffer> <CR> <ESC><CR>
         autocmd InsertEnter <buffer> inoremap <silent><buffer> <Esc> <Esc><C-w><C-q>:<C-u>call denite#move_to_parent()<CR>
     augroup END
 
     call deoplete#custom#buffer_option('auto_complete', v:false)
-
-    inoremap <silent><buffer> <Down> <Esc>
-       \:call denite#move_to_parent()<CR>
-       \:call cursor(line('.')+1,0)<CR>
-       \:call denite#move_to_filter()<CR>A
-    inoremap <silent><buffer> <Up> <Esc>
-       \:call denite#move_to_parent()<CR>
-       \:call cursor(line('.')-1,0)<CR>
-       \:call denite#move_to_filter()<CR>A
-
     imap <silent><buffer> <Esc> <Esc>:call denite#move_to_parent()<CR>
+    inoremap <silent><buffer> <Down> <Esc>
+        \:call denite#move_to_parent()<CR>
+        \:call cursor(line('.')+1,0)<CR>
+        \:call denite#move_to_filter()<CR>A
+    inoremap <silent><buffer> <Up> <Esc>
+        \:call denite#move_to_parent()<CR>
+        \:call cursor(line('.')-1,0)<CR>
+        \:call denite#move_to_filter()<CR>A
 endfunction
 
 let s:denite_default_options = {}
@@ -199,7 +197,7 @@ if executable("rg")
    \ })
 endif
 
-call denite#custom#source('file/rec', 'max_candidates, 100')
+call denite#custom#source('file/rec', 'max_candidates', 100)
 call denite#custom#source('grep', 'max_candidates', 300)
 
 " Change ignore_globs
@@ -301,7 +299,6 @@ EOF
 nnoremap <Leader>r :RunCode<CR>
 
 
-
 " Treesitter settings
 lua << EOF
 require'nvim-treesitter.configs'.setup {
@@ -310,3 +307,65 @@ require'nvim-treesitter.configs'.setup {
     },
 }
 EOF
+
+
+
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" nvim-notify settings
+lua << EOF
+local notify = require('notify')
+vim.notify = notify
+print = function(...)
+    local print_safe_args = {}
+    local _ = { ... }
+    for i = 1, #_ do
+        table.insert(print_safe_args, tostring(_[i]))
+    end
+    notify(table.concat(print_safe_args, ' '), "info")
+end
+require'notify'.setup({background_colour = "#000000", })
+require'ukagaka'
+EOF
+
+
+
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" Custom start screen
+fun! Start()
+    echomsg "Starting Neovim custom start screen"
+
+    if argc() || line2byte('$') != -1 || v:progname !~? '^[-gmnq]\=vim\=x\=\%[\.exe]$' || &insertmode
+        echomsg "Skipping custom start screen due to conditions"
+        return
+    endif
+
+    enew
+
+    setlocal
+        \ bufhidden=wipe
+        \ buftype=nofile
+        \ nobuflisted
+        \ nocursorcolumn
+        \ nocursorline
+        \ nolist
+        \ nonumber
+        \ noswapfile
+        \ norelativenumber
+
+    let art_path = expand('~/.config/nvim/aa.txt')
+    if filereadable(art_path)
+        let art_lines = readfile(art_path)
+        call append('$', art_lines)
+        echomsg "Art file loaded"
+    else
+        echomsg "Art file not found or not readable: " . art_path
+    endif
+
+    setlocal nomodifiable nomodified
+
+    nnoremap <buffer><silent> e :enew<CR>
+    nnoremap <buffer><silent> i :enew <bar> startinsert<CR>
+    nnoremap <buffer><silent> o :enew <bar> startinsert<CR>
+endfun
+
+autocmd VimEnter * call Start()
