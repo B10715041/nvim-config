@@ -15,33 +15,39 @@ if dein#load_state(s:dein_dir)
 
     " Plugins
     call dein#add('Shougo/dein.vim')
+
     call dein#add('Shougo/denite.nvim')
-    call dein#add('Shougo/deoplete-lsp')
-    call dein#add('Shougo/deoplete.nvim')
     call dein#add('Shougo/neomru.vim')
     call dein#add('Shougo/neoyank.vim')
+
+    call dein#add('Shougo/deoplete.nvim')
+    call dein#add('Shougo/deoplete-lsp')
+    call dein#add('neovim/nvim-lspconfig')
+    " call dein#add('nvim-lua/diagnostic-nvim')
+    " call dein#add('nvim-lua/lsp_extensions.nvim')
+
+    call dein#add('ryanoasis/vim-devicons')
+    call dein#add('preservim/nerdtree')
+    call dein#add('majutsushi/tagbar')
+
     call dein#add('CRAG666/code_runner.nvim')
     call dein#add('Yggdroot/indentLine')
-    call dein#add('airblade/vim-gitgutter')
-    call dein#add('b0o/schemastore.nvim')
     call dein#add('iamcco/markdown-preview.nvim', {'on_ft': ['markdown', 'pandoc.markdown', 'rmd'],
                         \ 'build': 'sh -c "cd app && npx --yes yarn install"' })
     call dein#add('jiangmiao/auto-pairs')
-    call dein#add('majutsushi/tagbar')
-    call dein#add('neovim/nvim-lspconfig')
-    call dein#add('nvim-lua/diagnostic-nvim')
-    call dein#add('nvim-lua/lsp_extensions.nvim')
     call dein#add('nvim-treesitter/nvim-treesitter', {'hook_post_update': 'TSUpdate'})
-    call dein#add('preservim/nerdtree')
-    call dein#add('ryanoasis/vim-devicons')
     call dein#add('tomasr/molokai')
     call dein#add('tpope/vim-commentary')
-    call dein#add('tpope/vim-fugitive')
     call dein#add('tpope/vim-surround')
+    call dein#add('tpope/vim-fugitive')
+    call dein#add('airblade/vim-gitgutter')
+
     call dein#add('vim-airline/vim-airline')
     call dein#add('vim-airline/vim-airline-themes')
 
     call dein#add('rcarriga/nvim-notify')
+
+    call dein#add('github/copilot.vim')
 
     call dein#end()
     call dein#save_state()
@@ -81,7 +87,6 @@ set fileencodings=ucs-bom,utf-8,default,iso-2022-jp,euc-jp,sjis
 " Remove comment continuation set by $VIMRUNTIME/ftplugin/vim.vim
 autocmd FileType * setlocal formatoptions-=cro
 
-nnoremap <ESC> :noh<CR>
 nnoremap <End> <End><Right>
 nnoremap <Home> ^
 nnoremap <PageUp> <C-u>
@@ -92,8 +97,8 @@ inoremap <Home> <Esc>^i
 inoremap <PageUp> <C-o><C-u>
 inoremap <PageDown> <C-o><C-d>
 
-
 let g:python3_host_prog = '/usr/bin/python3'
+let g:indentLine_conceallevel = 0
 
 
 
@@ -125,7 +130,6 @@ let g:airline_mode_map = {
     \ 'V'  : 'V-Line',
     \ '⌃V' : 'V-Block',
     \ }
-
 
 " denite settings {
 augroup my_denite
@@ -215,7 +219,6 @@ nmap <silent> <C-u><C-r> :<C-u>Denite -resume<CR>
 nmap <silent> <C-u>; :<C-u>Denite -resume -immediately -select=+1<CR>
 nmap <silent> <C-u>- :<C-u>Denite -resume -immediately -select=-1<CR>
 nnoremap <Leader>m :Denite mark<CR>
-
 " }
 
 
@@ -230,10 +233,17 @@ autocmd BufEnter * if tabpagenr('$') == 1 && winnr('$') == 1 && exists('b:NERDTr
 
 " Deoplete setting
 let g:deoplete#enable_at_startup = 1
+
+" Enable Deoplete for specific filetypes
+" autocmd FileType c,cpp call deoplete#custom#buffer_option('auto_complete', v:true)
+" autocmd FileType python call deoplete#custom#buffer_option('auto_complete', v:true)
+" autocmd FileType vim call deoplete#custom#buffer_option('auto_complete', v:true)
+autocmd FileType javascript,html setlocal tabstop=2 shiftwidth=2 softtabstop=2 | call deoplete#custom#buffer_option('auto_complete', v:true)
+
 " Close the preview window after completion is done
-autocmd CompleteDone * silent! pclose!
+autocmd CompleteDone * if pumvisible() == 0 | silent! pclose | endif
 " Tab completion
-inoremap <expr><TAB> pumvisible()? "\<C-n>": "\<TAB>"
+" inoremap <expr><TAB> pumvisible()? "\<C-n>": "\<TAB>"
 
 
 
@@ -243,7 +253,19 @@ require'lspconfig'.pyright.setup{}
 require'lspconfig'.clangd.setup{}
 require'lspconfig'.jsonls.setup{}
 require'lspconfig'.vimls.setup{}
+require'lspconfig'.tsserver.setup{}
+require'lspconfig'.html.setup{}
 EOF
+
+let g:copilot_filetypes = {
+    \ '*':      v:false,
+    \ 'python': v:true,
+    \ 'c':      v:true,
+    \ 'cpp':    v:true,
+    \ 'vim':    v:true,
+    \ 'html':   v:true,
+    \ 'javascript': v:true
+\}
 
 " LSP Keybindings
 " Go to definition
@@ -285,8 +307,8 @@ nmap <M-s> <Plug>MarkdownPreviewStop
 
 
 
-" Code runner settings
-" Modify the executable name for c/cpp for different project.
+" " Code runner settings
+" " Modify the executable name for c/cpp for different project.
 lua << EOF
 require'code_runner'.setup{
     filetype = {
@@ -297,6 +319,9 @@ require'code_runner'.setup{
 }
 EOF
 nnoremap <Leader>r :RunCode<CR>
+nnoremap <Leader>q :RunClose<CR>
+
+
 
 
 " Treesitter settings
@@ -313,20 +338,20 @@ EOF
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " nvim-notify settings
 lua << EOF
-local notify = require('notify')
-vim.notify = notify
-print = function(...)
-    local print_safe_args = {}
-    local _ = { ... }
-    for i = 1, #_ do
-        table.insert(print_safe_args, tostring(_[i]))
-    end
-    notify(table.concat(print_safe_args, ' '), "info")
-end
-require'notify'.setup({background_colour = "#000000", })
 require'ukagaka'
 EOF
 
+" local notify = require('notify')
+" vim.notify = notify
+" notify.setup({ background_colour = "#000000", })
+" print = function(...)
+"     local print_safe_args = {}
+"     local _ = { ... }
+"     for i = 1, #_ do
+"         table.insert(print_safe_args, tostring(_[i]))
+"     end
+"     notify(table.concat(print_safe_args, ' '), "info")
+" end
 
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -369,3 +394,6 @@ fun! Start()
 endfun
 
 autocmd VimEnter * call Start()
+
+
+
