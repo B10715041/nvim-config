@@ -69,7 +69,7 @@ local function schedule_quote()
     vim.defer_fn(function()
         M.send()
         schedule_quote()  -- Schedule the next quote
-    end, interval * 60 * 1000)  -- Convert seconds to milliseconds
+    end, interval * 60 * 10000)  -- Convert seconds to milliseconds
 end
 
 -- Start the schedule

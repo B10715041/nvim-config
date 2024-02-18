@@ -46,8 +46,11 @@ if dein#load_state(s:dein_dir)
     call dein#add('vim-airline/vim-airline-themes')
 
     call dein#add('rcarriga/nvim-notify')
+    call dein#add('voldikss/vim-floaterm')
 
     call dein#add('github/copilot.vim')
+
+    call dein#add('puremourning/vimspector')
 
     call dein#end()
     call dein#save_state()
@@ -69,7 +72,7 @@ colorscheme molokai
 set autoread
 set number
 set cursorline
-set virtualedit=onemore
+" set virtualedit=onemore
 set termguicolors
 set mouse=
 set ignorecase
@@ -82,7 +85,7 @@ set tabstop=4
 set showmatch
 set wildmode=list:longest
 set clipboard+=unnamedplus
-set fileencodings=ucs-bom,utf-8,default,iso-2022-jp,euc-jp,sjis
+set fileencodings=ucs-bom,utf-8,utf-16,default,iso-2022-jp,euc-jp,sjis
 
 " Remove comment continuation set by $VIMRUNTIME/ftplugin/vim.vim
 autocmd FileType * setlocal formatoptions-=cro
@@ -100,6 +103,10 @@ inoremap <PageDown> <C-o><C-d>
 let g:python3_host_prog = '/usr/bin/python3'
 let g:indentLine_conceallevel = 0
 
+" For terminal mode
+tnoremap <Esc> <C-\><C-n>
+command! -nargs=* T split | wincmd j | resize 20 | terminal <args>
+autocmd TermOpen * startinsert
 
 
 
@@ -250,7 +257,10 @@ autocmd CompleteDone * if pumvisible() == 0 | silent! pclose | endif
 " LSP configuration
 lua << EOF
 require'lspconfig'.pyright.setup{}
-require'lspconfig'.clangd.setup{}
+require'lspconfig'.clangd.setup{
+    on_attach = on_attach,
+    cmd = { 'clangd', '--offset-encoding=utf-16', }, 
+}
 require'lspconfig'.jsonls.setup{}
 require'lspconfig'.vimls.setup{}
 require'lspconfig'.tsserver.setup{}
@@ -264,7 +274,9 @@ let g:copilot_filetypes = {
     \ 'cpp':    v:true,
     \ 'vim':    v:true,
     \ 'html':   v:true,
-    \ 'javascript': v:true
+    \ 'javascript': v:true,
+    \ 'sh':     v:true,
+    \ 'markdown': v:true
 \}
 
 " LSP Keybindings
@@ -291,6 +303,37 @@ nnoremap <silent> ]d :lua vim.diagnostic.goto_next()<CR>
 " Format code
 nnoremap <silent> <Leader>f :lua vim.lsp.buf.format()<CR>
 
+" Automatically close the quickfix window when leving it.
+autocmd WinLeave <buffer> if &buftype == 'quickfix' |cclose| endif
+
+
+
+" vimspector settings
+let g:vimspector_install_gadgets = [ 'debugpy', 'vscode-cpptools' ] 
+" To install the gadgets, run :VimspectorInstall
+
+" Start or continue debugging
+nmap <Leader>dl :call vimspector#Launch()<CR>
+" Stop debugging
+nmap <Leader>de :call vimspector#Reset()<CR>
+" Restart debugging with the same configuration
+nmap <Leader>dr :call vimspector#Restart()<CR>
+" Step over
+nmap <Leader>dn :call vimspector#StepOver()<CR>
+" Step into
+nmap <Leader>di :call vimspector#StepInto()<CR>
+" Step out
+nmap <Leader>do :call vimspector#StepOut()<CR>
+" Continue execution (to next breakpoint or end)
+nmap <Leader>dc :call vimspector#Continue()<CR>
+" Add a breakpoint at the current line
+nmap <Leader>dt :call vimspector#ToggleBreakpoint()<CR>
+" Evaluate expression under cursor or visual selection
+nmap <Leader>dv :call vimspector#Evaluate()<CR>
+
+
+
+
 
 
 " tagbar settings
@@ -299,7 +342,7 @@ nnoremap <F8> :TagbarToggle<CR>
 
 
 " MarkdownPreview Settings
-let g:mkdp_auto_start = 1
+let g:mkdp_auto_start = 0
 let g:mkdp_browser = 'chrome'
 let g:mkdp_echo_preview_url = 1
 nmap <C-s> <Plug>MarkdownPreview
@@ -335,6 +378,12 @@ EOF
 
 
 
+
+" Floaterm settings
+let g:floaterm_keymap_toggle = '<F12>'
+
+
+
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " nvim-notify settings
 lua << EOF
@@ -356,44 +405,44 @@ EOF
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Custom start screen
-fun! Start()
-    echomsg "Starting Neovim custom start screen"
+" fun! Start()
+"     echomsg "Starting Neovim custom start screen"
 
-    if argc() || line2byte('$') != -1 || v:progname !~? '^[-gmnq]\=vim\=x\=\%[\.exe]$' || &insertmode
-        echomsg "Skipping custom start screen due to conditions"
-        return
-    endif
+"     if argc() || line2byte('$') != -1 || v:progname !~? '^[-gmnq]\=vim\=x\=\%[\.exe]$' || &insertmode
+"         echomsg "Skipping custom start screen due to conditions"
+"         return
+"     endif
 
-    enew
+"     enew
 
-    setlocal
-        \ bufhidden=wipe
-        \ buftype=nofile
-        \ nobuflisted
-        \ nocursorcolumn
-        \ nocursorline
-        \ nolist
-        \ nonumber
-        \ noswapfile
-        \ norelativenumber
+"     setlocal
+"         \ bufhidden=wipe
+"         \ buftype=nofile
+"         \ nobuflisted
+"         \ nocursorcolumn
+"         \ nocursorline
+"         \ nolist
+"         \ nonumber
+"         \ noswapfile
+"         \ norelativenumber
 
-    let art_path = expand('~/.config/nvim/aa.txt')
-    if filereadable(art_path)
-        let art_lines = readfile(art_path)
-        call append('$', art_lines)
-        echomsg "Art file loaded"
-    else
-        echomsg "Art file not found or not readable: " . art_path
-    endif
+"     let art_path = expand('~/.config/nvim/aa.txt')
+"     if filereadable(art_path)
+"         let art_lines = readfile(art_path)
+"         call append('$', art_lines)
+"         echomsg "Art file loaded"
+"     else
+"         echomsg "Art file not found or not readable: " . art_path
+"     endif
 
-    setlocal nomodifiable nomodified
+"     setlocal nomodifiable nomodified
 
-    nnoremap <buffer><silent> e :enew<CR>
-    nnoremap <buffer><silent> i :enew <bar> startinsert<CR>
-    nnoremap <buffer><silent> o :enew <bar> startinsert<CR>
-endfun
+"     nnoremap <buffer><silent> e :enew<CR>
+"     nnoremap <buffer><silent> i :enew <bar> startinsert<CR>
+"     nnoremap <buffer><silent> o :enew <bar> startinsert<CR>
+" endfun
 
-autocmd VimEnter * call Start()
+" autocmd VimEnter * call Start()
 
 
 
